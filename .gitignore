@@ -2,6 +2,7 @@
 credentials.json
 application.conf
 .idea/saveactions_settings.xml
+.idea
 
 # Created by https://www.gitignore.io/api/maven, macos,linux,windows,intellij,intellij+iml
 

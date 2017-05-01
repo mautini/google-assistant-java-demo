@@ -38,3 +38,6 @@ The application will store your oAuth2 credentials in a file so you will not hav
 - [Python Sample](https://github.com/googlesamples/assistant-sdk-python)
 
 Feel free to give me some feedback or ask questions if you have any.
+
+## Youtube Demo Video
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=vTgU9PpZwso" target="_blank"><img src="http://img.youtube.com/vi/vTgU9PpZwso/0.jpg" alt="Youtube Video Demo" width="240" height="180" border="10" /></a>
