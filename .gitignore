@@ -1,6 +1,7 @@
 # Custom files
 credentials.json
 application.conf
+.idea/saveactions_settings.xml
 
 # Created by https://www.gitignore.io/api/maven, macos,linux,windows,intellij,intellij+iml
 
