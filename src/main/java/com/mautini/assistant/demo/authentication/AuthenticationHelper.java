@@ -57,13 +57,16 @@ public class AuthenticationHelper {
         try {
             File file = new File(authenticationConf.getCredentialsFilePath());
             if (file.exists()) {
+                LOGGER.info("Loading oAuth credentials from file");
                 // If we have previous credentials in a file, use them
                 oAuthCredentials = gson.fromJson(new JsonReader(new FileReader(authenticationConf.getCredentialsFilePath())), OAuthCredentials.class);
+                LOGGER.info("Access Token: " + oAuthCredentials.getAccessToken());
             } else {
                 // Create new credentials
                 Optional<OAuthCredentials> optCredentials = requestAccessToken();
                 if (optCredentials.isPresent()) {
                     oAuthCredentials = optCredentials.get();
+                    LOGGER.info("Access Token: " + oAuthCredentials.getAccessToken());
                     saveCredentials();
                 }
             }
@@ -99,6 +102,7 @@ public class AuthenticationHelper {
                     .execute();
 
             if (response.isSuccessful()) {
+                LOGGER.info("New Access Token: " + response.body().getAccessToken());
                 oAuthCredentials.setAccessToken(response.body().getAccessToken());
                 oAuthCredentials.setExpiresIn(response.body().getExpiresIn());
                 oAuthCredentials.setTokenType(response.body().getTokenType());

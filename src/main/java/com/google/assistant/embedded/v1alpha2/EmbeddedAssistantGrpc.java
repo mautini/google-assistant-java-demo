@@ -1,4 +1,4 @@
-package com.google.assistant.embedded.v1alpha1;
+package com.google.assistant.embedded.v1alpha2;
 
 import static io.grpc.stub.ClientCalls.asyncUnaryCall;
 import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;
@@ -17,28 +17,28 @@ import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;
 
 /**
  * <pre>
- * Service that implements Google Assistant API.
+ * Service that implements the Google Assistant API.
  * </pre>
  */
 @javax.annotation.Generated(
     value = "by gRPC proto compiler (version 1.3.0)",
-    comments = "Source: google/assistant/embedded/v1alpha1/embedded_assistant.proto")
+    comments = "Source: google/assistant/embedded/v1alpha2/embedded_assistant.proto")
 public final class EmbeddedAssistantGrpc {
 
   private EmbeddedAssistantGrpc() {}
 
-  public static final String SERVICE_NAME = "google.assistant.embedded.v1alpha1.EmbeddedAssistant";
+  public static final String SERVICE_NAME = "google.assistant.embedded.v1alpha2.EmbeddedAssistant";
 
   // Static method descriptors that strictly reflect the proto.
   @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  public static final io.grpc.MethodDescriptor<com.google.assistant.embedded.v1alpha1.ConverseRequest,
-      com.google.assistant.embedded.v1alpha1.ConverseResponse> METHOD_CONVERSE =
+  public static final io.grpc.MethodDescriptor<com.google.assistant.embedded.v1alpha2.AssistRequest,
+      com.google.assistant.embedded.v1alpha2.AssistResponse> METHOD_ASSIST =
       io.grpc.MethodDescriptor.create(
           io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING,
           generateFullMethodName(
-              "google.assistant.embedded.v1alpha1.EmbeddedAssistant", "Converse"),
-          io.grpc.protobuf.ProtoUtils.marshaller(com.google.assistant.embedded.v1alpha1.ConverseRequest.getDefaultInstance()),
-          io.grpc.protobuf.ProtoUtils.marshaller(com.google.assistant.embedded.v1alpha1.ConverseResponse.getDefaultInstance()));
+              "google.assistant.embedded.v1alpha2.EmbeddedAssistant", "Assist"),
+          io.grpc.protobuf.ProtoUtils.marshaller(com.google.assistant.embedded.v1alpha2.AssistRequest.getDefaultInstance()),
+          io.grpc.protobuf.ProtoUtils.marshaller(com.google.assistant.embedded.v1alpha2.AssistResponse.getDefaultInstance()));
 
   /**
    * Creates a new async stub that supports all call types for the service
@@ -65,72 +65,73 @@ public final class EmbeddedAssistantGrpc {
 
   /**
    * <pre>
-   * Service that implements Google Assistant API.
+   * Service that implements the Google Assistant API.
    * </pre>
    */
   public static abstract class EmbeddedAssistantImplBase implements io.grpc.BindableService {
 
     /**
      * <pre>
-     * Initiates or continues a conversation with the embedded assistant service.
+     * Initiates or continues a conversation with the embedded Assistant Service.
      * Each call performs one round-trip, sending an audio request to the service
      * and receiving the audio response. Uses bidirectional streaming to receive
      * results, such as the `END_OF_UTTERANCE` event, while sending audio.
      * A conversation is one or more gRPC connections, each consisting of several
      * streamed requests and responses.
-     * For example, the user says *Add to my shopping list* and the assistant
+     * For example, the user says *Add to my shopping list* and the Assistant
      * responds *What do you want to add?*. The sequence of streamed requests and
      * responses in the first gRPC message could be:
-     * *   ConverseRequest.config
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseResponse.event_type.END_OF_UTTERANCE
-     * *   ConverseResponse.result.microphone_mode.DIALOG_FOLLOW_ON
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * The user then says *bagels* and the assistant responds
+     * *   AssistRequest.config
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistResponse.event_type.END_OF_UTTERANCE
+     * *   AssistResponse.speech_results.transcript "add to my shopping list"
+     * *   AssistResponse.dialog_state_out.microphone_mode.DIALOG_FOLLOW_ON
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * The user then says *bagels* and the Assistant responds
      * *OK, I've added bagels to your shopping list*. This is sent as another gRPC
-     * connection call to the `Converse` method, again with streamed requests and
+     * connection call to the `Assist` method, again with streamed requests and
      * responses, such as:
-     * *   ConverseRequest.config
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseResponse.event_type.END_OF_UTTERANCE
-     * *   ConverseResponse.result.microphone_mode.CLOSE_MICROPHONE
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
+     * *   AssistRequest.config
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistResponse.event_type.END_OF_UTTERANCE
+     * *   AssistResponse.dialog_state_out.microphone_mode.CLOSE_MICROPHONE
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
      * Although the precise order of responses is not guaranteed, sequential
-     * ConverseResponse.audio_out messages will always contain sequential portions
+     * `AssistResponse.audio_out` messages will always contain sequential portions
      * of audio.
      * </pre>
      */
-    public io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha1.ConverseRequest> converse(
-        io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha1.ConverseResponse> responseObserver) {
-      return asyncUnimplementedStreamingCall(METHOD_CONVERSE, responseObserver);
+    public io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha2.AssistRequest> assist(
+        io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha2.AssistResponse> responseObserver) {
+      return asyncUnimplementedStreamingCall(METHOD_ASSIST, responseObserver);
     }
 
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
-            METHOD_CONVERSE,
+            METHOD_ASSIST,
             asyncBidiStreamingCall(
               new MethodHandlers<
-                com.google.assistant.embedded.v1alpha1.ConverseRequest,
-                com.google.assistant.embedded.v1alpha1.ConverseResponse>(
-                  this, METHODID_CONVERSE)))
+                com.google.assistant.embedded.v1alpha2.AssistRequest,
+                com.google.assistant.embedded.v1alpha2.AssistResponse>(
+                  this, METHODID_ASSIST)))
           .build();
     }
   }
 
   /**
    * <pre>
-   * Service that implements Google Assistant API.
+   * Service that implements the Google Assistant API.
    * </pre>
    */
   public static final class EmbeddedAssistantStub extends io.grpc.stub.AbstractStub<EmbeddedAssistantStub> {
@@ -151,54 +152,55 @@ public final class EmbeddedAssistantGrpc {
 
     /**
      * <pre>
-     * Initiates or continues a conversation with the embedded assistant service.
+     * Initiates or continues a conversation with the embedded Assistant Service.
      * Each call performs one round-trip, sending an audio request to the service
      * and receiving the audio response. Uses bidirectional streaming to receive
      * results, such as the `END_OF_UTTERANCE` event, while sending audio.
      * A conversation is one or more gRPC connections, each consisting of several
      * streamed requests and responses.
-     * For example, the user says *Add to my shopping list* and the assistant
+     * For example, the user says *Add to my shopping list* and the Assistant
      * responds *What do you want to add?*. The sequence of streamed requests and
      * responses in the first gRPC message could be:
-     * *   ConverseRequest.config
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseResponse.event_type.END_OF_UTTERANCE
-     * *   ConverseResponse.result.microphone_mode.DIALOG_FOLLOW_ON
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * The user then says *bagels* and the assistant responds
+     * *   AssistRequest.config
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistResponse.event_type.END_OF_UTTERANCE
+     * *   AssistResponse.speech_results.transcript "add to my shopping list"
+     * *   AssistResponse.dialog_state_out.microphone_mode.DIALOG_FOLLOW_ON
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * The user then says *bagels* and the Assistant responds
      * *OK, I've added bagels to your shopping list*. This is sent as another gRPC
-     * connection call to the `Converse` method, again with streamed requests and
+     * connection call to the `Assist` method, again with streamed requests and
      * responses, such as:
-     * *   ConverseRequest.config
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseRequest.audio_in
-     * *   ConverseResponse.event_type.END_OF_UTTERANCE
-     * *   ConverseResponse.result.microphone_mode.CLOSE_MICROPHONE
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
-     * *   ConverseResponse.audio_out
+     * *   AssistRequest.config
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistRequest.audio_in
+     * *   AssistResponse.event_type.END_OF_UTTERANCE
+     * *   AssistResponse.dialog_state_out.microphone_mode.CLOSE_MICROPHONE
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
+     * *   AssistResponse.audio_out
      * Although the precise order of responses is not guaranteed, sequential
-     * ConverseResponse.audio_out messages will always contain sequential portions
+     * `AssistResponse.audio_out` messages will always contain sequential portions
      * of audio.
      * </pre>
      */
-    public io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha1.ConverseRequest> converse(
-        io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha1.ConverseResponse> responseObserver) {
+    public io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha2.AssistRequest> assist(
+        io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha2.AssistResponse> responseObserver) {
       return asyncBidiStreamingCall(
-          getChannel().newCall(METHOD_CONVERSE, getCallOptions()), responseObserver);
+          getChannel().newCall(METHOD_ASSIST, getCallOptions()), responseObserver);
     }
   }
 
   /**
    * <pre>
-   * Service that implements Google Assistant API.
+   * Service that implements the Google Assistant API.
    * </pre>
    */
   public static final class EmbeddedAssistantBlockingStub extends io.grpc.stub.AbstractStub<EmbeddedAssistantBlockingStub> {
@@ -220,7 +222,7 @@ public final class EmbeddedAssistantGrpc {
 
   /**
    * <pre>
-   * Service that implements Google Assistant API.
+   * Service that implements the Google Assistant API.
    * </pre>
    */
   public static final class EmbeddedAssistantFutureStub extends io.grpc.stub.AbstractStub<EmbeddedAssistantFutureStub> {
@@ -240,7 +242,7 @@ public final class EmbeddedAssistantGrpc {
     }
   }
 
-  private static final int METHODID_CONVERSE = 0;
+  private static final int METHODID_ASSIST = 0;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -269,9 +271,9 @@ public final class EmbeddedAssistantGrpc {
     public io.grpc.stub.StreamObserver<Req> invoke(
         io.grpc.stub.StreamObserver<Resp> responseObserver) {
       switch (methodId) {
-        case METHODID_CONVERSE:
-          return (io.grpc.stub.StreamObserver<Req>) serviceImpl.converse(
-              (io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha1.ConverseResponse>) responseObserver);
+        case METHODID_ASSIST:
+          return (io.grpc.stub.StreamObserver<Req>) serviceImpl.assist(
+              (io.grpc.stub.StreamObserver<com.google.assistant.embedded.v1alpha2.AssistResponse>) responseObserver);
         default:
           throw new AssertionError();
       }
@@ -281,7 +283,7 @@ public final class EmbeddedAssistantGrpc {
   private static final class EmbeddedAssistantDescriptorSupplier implements io.grpc.protobuf.ProtoFileDescriptorSupplier {
     @java.lang.Override
     public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
-      return com.google.assistant.embedded.v1alpha1.AssistantProto.getDescriptor();
+      return com.google.assistant.embedded.v1alpha2.AssistantProto.getDescriptor();
     }
   }
 
@@ -295,7 +297,7 @@ public final class EmbeddedAssistantGrpc {
         if (result == null) {
           serviceDescriptor = result = io.grpc.ServiceDescriptor.newBuilder(SERVICE_NAME)
               .setSchemaDescriptor(new EmbeddedAssistantDescriptorSupplier())
-              .addMethod(METHOD_CONVERSE)
+              .addMethod(METHOD_ASSIST)
               .build();
         }
       }

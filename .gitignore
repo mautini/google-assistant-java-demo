@@ -1,6 +1,8 @@
 # Custom files
 credentials.json
 application.conf
+device_instance.json
+device_model.json
 .idea/saveactions_settings.xml
 .idea
 

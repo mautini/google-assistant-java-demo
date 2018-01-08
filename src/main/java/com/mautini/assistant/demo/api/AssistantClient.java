@@ -1,17 +1,21 @@
 package com.mautini.assistant.demo.api;
 
-import com.google.assistant.embedded.v1alpha1.AudioInConfig;
-import com.google.assistant.embedded.v1alpha1.AudioOutConfig;
-import com.google.assistant.embedded.v1alpha1.ConverseConfig;
-import com.google.assistant.embedded.v1alpha1.ConverseRequest;
-import com.google.assistant.embedded.v1alpha1.ConverseResponse;
-import com.google.assistant.embedded.v1alpha1.ConverseState;
-import com.google.assistant.embedded.v1alpha1.EmbeddedAssistantGrpc;
+import com.google.assistant.embedded.v1alpha2.AssistConfig;
+import com.google.assistant.embedded.v1alpha2.AssistRequest;
+import com.google.assistant.embedded.v1alpha2.AssistResponse;
+import com.google.assistant.embedded.v1alpha2.AudioInConfig;
+import com.google.assistant.embedded.v1alpha2.AudioOutConfig;
+import com.google.assistant.embedded.v1alpha2.DeviceConfig;
+import com.google.assistant.embedded.v1alpha2.DialogStateIn;
+import com.google.assistant.embedded.v1alpha2.EmbeddedAssistantGrpc;
+import com.google.assistant.embedded.v1alpha2.SpeechRecognitionResult;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.OAuth2Credentials;
 import com.google.protobuf.ByteString;
 import com.mautini.assistant.demo.authentication.OAuthCredentials;
 import com.mautini.assistant.demo.config.AssistantConf;
+import com.mautini.assistant.demo.device.Device;
+import com.mautini.assistant.demo.device.DeviceModel;
 import com.mautini.assistant.demo.exception.ConverseException;
 import io.grpc.CallCredentials;
 import io.grpc.ManagedChannel;
@@ -26,8 +30,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-public class AssistantClient implements StreamObserver<ConverseResponse> {
+public class AssistantClient implements StreamObserver<AssistResponse> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AssistantClient.class);
 
@@ -43,12 +48,21 @@ public class AssistantClient implements StreamObserver<ConverseResponse> {
     /**
      * Conversation state to continue a conversation if needed
      *
-     * @see <a href="https://developers.google.com/assistant/sdk/reference/rpc/google.assistant.embedded.v1alpha1#google.assistant.embedded.v1alpha1.ConverseState">Google documentation</a>
+     * @see <a href="https://developers.google.com/assistant/sdk/reference/rpc/google.assistant.embedded.v1alpha2#google.assistant.embedded.v1alpha2.DialogStateOut.FIELDS.bytes.google.assistant.embedded.v1alpha2.DialogStateOut.conversation_state">Google documentation</a>
      */
     private ByteString currentConversationState;
 
-    public AssistantClient(OAuthCredentials oAuthCredentials, AssistantConf assistantConf) {
+    private DeviceModel deviceModel;
+
+    private Device device;
+
+    public AssistantClient(OAuthCredentials oAuthCredentials, AssistantConf assistantConf, DeviceModel deviceModel,
+                           Device device) {
+
         this.assistantConf = assistantConf;
+        this.deviceModel = deviceModel;
+        this.device = device;
+        this.currentConversationState = ByteString.EMPTY;
 
         // Create a channel to the test service.
         ManagedChannel channel = ManagedChannelBuilder.forAddress(assistantConf.getAssistantApiEndpoint(), 443)
@@ -96,7 +110,7 @@ public class AssistantClient implements StreamObserver<ConverseResponse> {
 
             LOGGER.info("Requesting the assistant");
             // Send the config request
-            StreamObserver<ConverseRequest> requester = embeddedAssistantStub.converse(this);
+            StreamObserver<AssistRequest> requester = embeddedAssistantStub.assist(this);
             requester.onNext(getConfigRequest());
 
             // Divide the audio request into chunks
@@ -107,12 +121,12 @@ public class AssistantClient implements StreamObserver<ConverseResponse> {
                 ByteString audioIn = ByteString.copyFrom(chunk);
 
                 // Chunk of the request
-                ConverseRequest converseRequest = ConverseRequest
+                AssistRequest assistRequest = AssistRequest
                         .newBuilder()
                         .setAudioIn(audioIn)
                         .build();
 
-                requester.onNext(converseRequest);
+                requester.onNext(assistRequest);
             }
 
             // Mark the end of requests
@@ -128,35 +142,39 @@ public class AssistantClient implements StreamObserver<ConverseResponse> {
     }
 
     @Override
-    public void onNext(ConverseResponse value) {
+    public void onNext(AssistResponse value) {
         try {
-            if (value.getEventType() != null && value.getEventType() != ConverseResponse.EventType.EVENT_TYPE_UNSPECIFIED) {
-                LOGGER.info("Event type : {}", value.getEventType().name());
-            }
+            if (value.getEventType() != null
+                    && value.getEventType() != AssistResponse.EventType.EVENT_TYPE_UNSPECIFIED) {
 
-            if (value.getError() != null && value.getError().getCode() != 0) {
-                LOGGER.info("Error in response : {}", value.getError().getMessage());
+                LOGGER.info("Event type : {}", value.getEventType().name());
             }
 
             if (value.getAudioOut() != null) {
                 currentResponse.write(value.getAudioOut().getAudioData().toByteArray());
             }
 
-            if (value.getResult() != null) {
-                currentConversationState = value.getResult().getConversationState();
+            if (value.getDialogStateOut() != null) {
+                currentConversationState = value.getDialogStateOut().getConversationState();
 
-                if (value.getResult().getSpokenRequestText() != null
-                        && !value.getResult().getSpokenRequestText().isEmpty()) {
+                if (value.getSpeechResultsList() != null) {
+                    String userRequest = value.getSpeechResultsList().stream()
+                            .map(SpeechRecognitionResult::getTranscript)
+                            .collect(Collectors.joining(" "));
 
-                    LOGGER.info("Request Text : {}", value.getResult().getSpokenRequestText());
-                }
-
-                if (value.getResult().getSpokenResponseText() != null
-                        && !value.getResult().getSpokenResponseText().isEmpty()) {
-
-                    LOGGER.info("Response Text : {}", value.getResult().getSpokenResponseText());
+                    if (!userRequest.isEmpty()) {
+                        LOGGER.info("Request Text : {}", userRequest);
+                    }
                 }
             }
+
+            if (value.getDialogStateOut() != null
+                    && value.getDialogStateOut().getSupplementalDisplayText() != null
+                    && !value.getDialogStateOut().getSupplementalDisplayText().isEmpty()) {
+
+                LOGGER.info("Response Text : {}", value.getDialogStateOut().getSupplementalDisplayText());
+            }
+
         } catch (Exception e) {
             LOGGER.warn("Error requesting the assistant", e);
         }
@@ -179,7 +197,7 @@ public class AssistantClient implements StreamObserver<ConverseResponse> {
      *
      * @return the request to send
      */
-    private ConverseRequest getConfigRequest() {
+    private AssistRequest getConfigRequest() {
         AudioInConfig audioInConfig = AudioInConfig
                 .newBuilder()
                 .setEncoding(AudioInConfig.Encoding.LINEAR16)
@@ -193,26 +211,28 @@ public class AssistantClient implements StreamObserver<ConverseResponse> {
                 .setVolumePercentage(assistantConf.getVolumePercent())
                 .build();
 
-        ConverseState converseState = null;
-        if (currentConversationState != null) {
-            converseState = ConverseState
-                    .newBuilder()
-                    .setConversationState(currentConversationState)
-                    .build();
-        }
-
-        ConverseConfig.Builder converseConfigBuilder = ConverseConfig
+        DialogStateIn.Builder dialogStateInBuilder = DialogStateIn
                 .newBuilder()
+                // We set the us local as default
+                .setLanguageCode("en-US")
+                .setConversationState(currentConversationState);
+
+        DeviceConfig deviceConfig = DeviceConfig
+                .newBuilder()
+                .setDeviceModelId(deviceModel.getDeviceModelId())
+                .setDeviceId(device.getId())
+                .build();
+
+        AssistConfig.Builder assistConfigBuilder = AssistConfig
+                .newBuilder()
+                .setDialogStateIn(dialogStateInBuilder.build())
+                .setDeviceConfig(deviceConfig)
                 .setAudioInConfig(audioInConfig)
                 .setAudioOutConfig(audioOutConfig);
 
-        if (converseState != null) {
-            converseConfigBuilder.setConverseState(converseState);
-        }
-
-        return ConverseRequest
+        return AssistRequest
                 .newBuilder()
-                .setConfig(converseConfigBuilder.build())
+                .setConfig(assistConfigBuilder.build())
                 .build();
     }
 
