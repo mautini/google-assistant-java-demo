@@ -19,6 +19,8 @@ import com.typesafe.config.ConfigFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Scanner;
+
 public class GoogleAssistantClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GoogleAssistantClient.class);
@@ -56,6 +58,11 @@ public class GoogleAssistantClient {
         AudioRecorder audioRecorder = new AudioRecorder(audioConf);
         AudioPlayer audioPlayer = new AudioPlayer(audioConf);
 
+        // Initiating Scanner to take user input
+        Scanner scanner = new Scanner(System.in);
+
+
+
         // Main loop
         while (true) {
             // Check if we need to refresh the access token to request the api
@@ -68,18 +75,36 @@ public class GoogleAssistantClient {
                 assistantClient.updateCredentials(authenticationHelper.getOAuthCredentials());
             }
 
-            // Record
-            byte[] request = audioRecorder.getRecord();
 
-            // Request the api
-            byte[] response = assistantClient.requestAssistant(request);
+            // Text Input
+            // Taking user input in
+            String query = scanner.next();
+            // Converting user into byte array to keep consistency of requestAssistant params
+            byte[] queryByte = query.getBytes();
 
-            // Play result if any
+            // requesting assistant with text query
+            byte[] response = assistantClient.requestAssistant(queryByte, "text");
+
             if (response.length > 0) {
-                audioPlayer.play(response);
+                System.out.println(assistantClient.getStringResponse());
             } else {
                 LOGGER.info("No response from the API");
             }
+
+
+            // Audio Input: uncomment to run
+            // Record
+//            byte[] request = audioRecorder.getRecord();
+//
+//            // Request the api
+//            byte[] response = assistantClient.requestAssistant(request, "audio");
+//
+//            // Play result if any
+//            if (response.length > 0) {
+//                audioPlayer.play(response);
+//            } else {
+//                LOGGER.info("No response from the API");
+//            }
         }
     }
 }

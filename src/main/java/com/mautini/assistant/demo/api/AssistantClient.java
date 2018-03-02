@@ -36,6 +36,9 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AssistantClient.class);
 
+    private static final String MOD_AUDIO = "audio";
+    private static final String MOD_TEXT = "text";
+
     private CountDownLatch finishLatch = new CountDownLatch(1);
 
     private EmbeddedAssistantGrpc.EmbeddedAssistantStub embeddedAssistantStub;
@@ -44,6 +47,15 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     // See reference.conf
     private AssistantConf assistantConf;
+
+    // audio or text
+    private String inputType;
+
+    // if text inputType, text query is set
+    private String textQuery;
+
+    // Text Query response is captured in string format
+    private String textQueryResponse;
 
     /**
      * Conversation state to continue a conversation if needed
@@ -102,7 +114,71 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
         embeddedAssistantStub = embeddedAssistantStub.withCallCredentials(getCallCredentials(oAuthCredentials));
     }
 
-    public byte[] requestAssistant(byte[] request) throws ConverseException {
+    /**
+     * Calling text query or audio assistant based on params
+     * @param request
+     * @param type
+     * @return byte[]
+     * @throws ConverseException
+     */
+    public byte[]
+    requestAssistant(byte[] request, String type) throws ConverseException {
+        inputType = type;
+        switch (inputType) {
+            case MOD_AUDIO:
+                return audioRequestAssistant(request);
+            case MOD_TEXT:
+                return textRequestAssistant(request);
+            default:
+                return textRequestAssistant(request);
+        }
+    }
+
+    /**
+     * Handle text query
+     * @param request byte[]
+     * @return byte[]
+     * @throws ConverseException
+     */
+    private byte[]
+    textRequestAssistant(byte[] request) throws ConverseException {
+        this.textQuery = new String(request);
+        LOGGER.info(this.textQuery);
+        try {
+            // Send the config request
+            StreamObserver<AssistRequest> requester = embeddedAssistantStub.assist(this);
+            requester.onNext(getConfigRequest());
+
+            LOGGER.info("Requesting the assistant");
+
+            // Mark the end of requests
+            requester.onCompleted();
+
+            // Receiving happens asynchronously
+            finishLatch.await(1, TimeUnit.MINUTES);
+
+            return currentResponse.toByteArray();
+        } catch (Exception e) {
+            throw new ConverseException("Error requesting the assistant", e);
+        }
+    }
+
+    /**
+     * Helper to cature string response for onNext method
+     * @return String
+     */
+    public String getStringResponse() {
+        return this.textQueryResponse;
+    }
+
+    /**
+     * Handle audio request
+     * @param request byte[]
+     * @return byte[]
+     * @throws ConverseException
+     */
+    private byte[]
+    audioRequestAssistant(byte[] request) throws ConverseException {
         try {
             // Reset the byte array
             currentResponse = new ByteArrayOutputStream();
@@ -172,6 +248,8 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
                     && value.getDialogStateOut().getSupplementalDisplayText() != null
                     && !value.getDialogStateOut().getSupplementalDisplayText().isEmpty()) {
 
+                // Capturing string response for text query output
+                this.textQueryResponse = value.getDialogStateOut().getSupplementalDisplayText();
                 LOGGER.info("Response Text : {}", value.getDialogStateOut().getSupplementalDisplayText());
             }
 
@@ -214,7 +292,7 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
         DialogStateIn.Builder dialogStateInBuilder = DialogStateIn
                 .newBuilder()
                 // We set the us local as default
-                .setLanguageCode("en-US")
+                .setLanguageCode("en-UK")
                 .setConversationState(currentConversationState);
 
         DeviceConfig deviceConfig = DeviceConfig
@@ -230,10 +308,38 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
                 .setAudioInConfig(audioInConfig)
                 .setAudioOutConfig(audioOutConfig);
 
+        // Preparing AssistantConfig based on type of input. ie audio or text
+        assistConfigBuilder = getAssistConfigBuilder(
+                assistConfigBuilder, audioInConfig, textQuery
+        );
+
         return AssistRequest
                 .newBuilder()
                 .setConfig(assistConfigBuilder.build())
                 .build();
+    }
+
+    /**
+     * Prepares AssistConfig based on input type
+     * @param assistConfigBuilder AssistConfig.Builder
+     * @param audioConfig AudioInConfig
+     * @param text_query String
+     * @return AssistConfig.Builder
+     */
+    private AssistConfig.Builder getAssistConfigBuilder(
+            AssistConfig.Builder assistConfigBuilder,
+            AudioInConfig audioConfig,
+            String text_query
+    ) {
+        switch (inputType) {
+            case MOD_AUDIO:
+                return assistConfigBuilder.setAudioInConfig(audioConfig);
+            case MOD_TEXT:
+                return assistConfigBuilder.setTextQuery(text_query);
+            default:
+                return assistConfigBuilder.setTextQuery(text_query);
+        }
+
     }
 
     /**
