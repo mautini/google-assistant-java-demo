@@ -14,6 +14,7 @@ import com.google.auth.oauth2.OAuth2Credentials;
 import com.google.protobuf.ByteString;
 import com.mautini.assistant.demo.authentication.OAuthCredentials;
 import com.mautini.assistant.demo.config.AssistantConf;
+import com.mautini.assistant.demo.config.IoConf;
 import com.mautini.assistant.demo.device.Device;
 import com.mautini.assistant.demo.device.DeviceModel;
 import com.mautini.assistant.demo.exception.ConverseException;
@@ -45,6 +46,15 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
     // See reference.conf
     private AssistantConf assistantConf;
 
+    // if text inputType, text query is set
+    private String textQuery;
+
+    private byte[] audioResponse;
+
+    private String textResponse;
+
+    private IoConf ioConf;
+
     /**
      * Conversation state to continue a conversation if needed
      *
@@ -57,12 +67,13 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
     private Device device;
 
     public AssistantClient(OAuthCredentials oAuthCredentials, AssistantConf assistantConf, DeviceModel deviceModel,
-                           Device device) {
+                           Device device, IoConf ioConf) {
 
         this.assistantConf = assistantConf;
         this.deviceModel = deviceModel;
         this.device = device;
         this.currentConversationState = ByteString.EMPTY;
+        this.ioConf = ioConf;
 
         // Create a channel to the test service.
         ManagedChannel channel = ManagedChannelBuilder.forAddress(assistantConf.getAssistantApiEndpoint(), 443)
@@ -102,7 +113,66 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
         embeddedAssistantStub = embeddedAssistantStub.withCallCredentials(getCallCredentials(oAuthCredentials));
     }
 
-    public byte[] requestAssistant(byte[] request) throws ConverseException {
+    /**
+     * Calling text query or audio assistant based on params
+     * @param request the request for the assistant (text or voice)
+     * @throws ConverseException
+     */
+    public void requestAssistant(byte[] request) throws ConverseException {
+        switch (ioConf.getInputMode()) {
+            case IoConf.AUDIO:
+                audioResponse = audioRequestAssistant(request);
+                break;
+            case IoConf.TEXT:
+                audioResponse = textRequestAssistant(request);
+                break;
+            default:
+                LOGGER.error("Unknown input mode {}", ioConf.getInputMode());
+        }
+    }
+
+    /**
+     * Handle text query
+     * @param request byte[]
+     * @return byte[]
+     * @throws ConverseException
+     */
+    private byte[] textRequestAssistant(byte[] request) throws ConverseException {
+        this.textQuery = new String(request);
+        try {
+            // Send the config request
+            StreamObserver<AssistRequest> requester = embeddedAssistantStub.assist(this);
+            requester.onNext(getConfigRequest());
+
+            LOGGER.info("Requesting the assistant");
+
+            // Mark the end of requests
+            requester.onCompleted();
+
+            // Receiving happens asynchronously
+            finishLatch.await(1, TimeUnit.MINUTES);
+
+            return currentResponse.toByteArray();
+        } catch (Exception e) {
+            throw new ConverseException("Error requesting the assistant", e);
+        }
+    }
+
+    public byte[] getAudioResponse() {
+        return audioResponse;
+    }
+
+    public String getTextResponse() {
+        return textResponse;
+    }
+
+    /**
+     * Handle audio request
+     * @param request byte[]
+     * @return byte[]
+     * @throws ConverseException
+     */
+    private byte[] audioRequestAssistant(byte[] request) throws ConverseException {
         try {
             // Reset the byte array
             currentResponse = new ByteArrayOutputStream();
@@ -172,7 +242,8 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
                     && value.getDialogStateOut().getSupplementalDisplayText() != null
                     && !value.getDialogStateOut().getSupplementalDisplayText().isEmpty()) {
 
-                LOGGER.info("Response Text : {}", value.getDialogStateOut().getSupplementalDisplayText());
+                // Capturing string response for text query output
+                this.textResponse = value.getDialogStateOut().getSupplementalDisplayText();
             }
 
         } catch (Exception e) {
@@ -214,7 +285,7 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
         DialogStateIn.Builder dialogStateInBuilder = DialogStateIn
                 .newBuilder()
                 // We set the us local as default
-                .setLanguageCode("en-US")
+                .setLanguageCode("en-UK")
                 .setConversationState(currentConversationState);
 
         DeviceConfig deviceConfig = DeviceConfig
@@ -230,10 +301,39 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
                 .setAudioInConfig(audioInConfig)
                 .setAudioOutConfig(audioOutConfig);
 
+        // Preparing AssistantConfig based on type of input. ie audio or text
+        assistConfigBuilder = getAssistConfigBuilder(
+                assistConfigBuilder, audioInConfig, textQuery
+        );
+
         return AssistRequest
                 .newBuilder()
                 .setConfig(assistConfigBuilder.build())
                 .build();
+    }
+
+    /**
+     * Prepares AssistConfig based on input type
+     * @param assistConfigBuilder AssistConfig.Builder
+     * @param audioConfig AudioInConfig
+     * @param text_query String
+     * @return AssistConfig.Builder
+     */
+    private AssistConfig.Builder getAssistConfigBuilder(
+            AssistConfig.Builder assistConfigBuilder,
+            AudioInConfig audioConfig,
+            String text_query
+    ) {
+        switch (ioConf.getInputMode()) {
+            case IoConf.AUDIO:
+                return assistConfigBuilder.setAudioInConfig(audioConfig);
+            case IoConf.TEXT:
+                return assistConfigBuilder.setTextQuery(text_query);
+            default:
+                LOGGER.error("Unknown input mode {}", ioConf.getInputMode());
+                return assistConfigBuilder;
+        }
+
     }
 
     /**

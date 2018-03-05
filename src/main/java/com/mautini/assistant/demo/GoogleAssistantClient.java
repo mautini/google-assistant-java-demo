@@ -8,6 +8,7 @@ import com.mautini.assistant.demo.config.AssistantConf;
 import com.mautini.assistant.demo.config.AudioConf;
 import com.mautini.assistant.demo.config.AuthenticationConf;
 import com.mautini.assistant.demo.config.DeviceRegisterConf;
+import com.mautini.assistant.demo.config.IoConf;
 import com.mautini.assistant.demo.device.DeviceRegister;
 import com.mautini.assistant.demo.exception.AudioException;
 import com.mautini.assistant.demo.exception.AuthenticationException;
@@ -18,6 +19,8 @@ import com.typesafe.config.ConfigBeanFactory;
 import com.typesafe.config.ConfigFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Scanner;
 
 public class GoogleAssistantClient {
 
@@ -30,6 +33,7 @@ public class GoogleAssistantClient {
         DeviceRegisterConf deviceRegisterConf = ConfigBeanFactory.create(root.getConfig("deviceRegister"), DeviceRegisterConf.class);
         AssistantConf assistantConf = ConfigBeanFactory.create(root.getConfig("assistant"), AssistantConf.class);
         AudioConf audioConf = ConfigBeanFactory.create(root.getConfig("audio"), AudioConf.class);
+        IoConf ioConf = ConfigBeanFactory.create(root.getConfig("io"), IoConf.class);
 
         // Authentication
         AuthenticationHelper authenticationHelper = new AuthenticationHelper(authenticationConf);
@@ -50,11 +54,14 @@ public class GoogleAssistantClient {
 
         // Build the client (stub)
         AssistantClient assistantClient = new AssistantClient(authenticationHelper.getOAuthCredentials(), assistantConf,
-                deviceRegister.getDeviceModel(), deviceRegister.getDevice());
+                deviceRegister.getDeviceModel(), deviceRegister.getDevice(), ioConf);
 
         // Build the objects to record and play the conversation
         AudioRecorder audioRecorder = new AudioRecorder(audioConf);
         AudioPlayer audioPlayer = new AudioPlayer(audioConf);
+
+        // Initiating Scanner to take user input
+        Scanner scanner = new Scanner(System.in);
 
         // Main loop
         while (true) {
@@ -68,18 +75,39 @@ public class GoogleAssistantClient {
                 assistantClient.updateCredentials(authenticationHelper.getOAuthCredentials());
             }
 
-            // Record
-            byte[] request = audioRecorder.getRecord();
 
-            // Request the api
-            byte[] response = assistantClient.requestAssistant(request);
+            // Get input (text or voice)
+            byte[] request = getInput(ioConf, scanner, audioRecorder);
 
-            // Play result if any
-            if (response.length > 0) {
-                audioPlayer.play(response);
-            } else {
-                LOGGER.info("No response from the API");
+            // requesting assistant with text query
+            assistantClient.requestAssistant(request);
+            LOGGER.info(assistantClient.getTextResponse());
+
+            if (Boolean.TRUE.equals(ioConf.getOutputAudio())) {
+                byte[] audioResponse = assistantClient.getAudioResponse();
+                if (audioResponse.length > 0) {
+                    audioPlayer.play(audioResponse);
+                } else {
+                    LOGGER.info("No response from the API");
+                }
             }
+        }
+    }
+
+    private static byte[] getInput(IoConf ioConf, Scanner scanner, AudioRecorder audioRecorder) throws AudioException {
+        switch (ioConf.getInputMode()) {
+            case IoConf.TEXT:
+                LOGGER.info("Tap your request and press enter...");
+                // Taking user input in
+                String query = scanner.next();
+                // Converting user into byte array to keep consistency of requestAssistant params
+                return query.getBytes();
+            case IoConf.AUDIO:
+                // Record
+                return audioRecorder.getRecord();
+            default:
+                LOGGER.error("Unknown input mode {}", ioConf.getInputMode());
+                return new byte[]{};
         }
     }
 }

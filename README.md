@@ -30,6 +30,10 @@ Since the alpha2 version of the SDK, the API must register a device model and a 
 The project use generated bindings (package `com.google.assistant.embedded.v1alpha2`) from Google Apis (repository in References / Links section). If you want to update theses files,
 you can follow [this guide](https://developers.google.com/assistant/sdk/prototype/getting-started-other-platforms/integrate#generate_the_grpc_bindings_for_your_language)
 
+### Audio / Text - Input / Output
+In the `reference.conf` file, you can choose if you want to make your request with your voice or by entering text
+(parameter `inputMode`). You can also choose if you want to play the response in audio with the `outputAudio` parameter.
+
 ## Usage
 
 The first time you start the application, you must authorize the application via the oAuth2 protocol.
