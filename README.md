@@ -32,7 +32,7 @@ you can follow [this guide](https://developers.google.com/assistant/sdk/prototyp
 
 ### Audio / Text - Input / Output
 In the `reference.conf` file, you can choose if you want to make your request with your voice or by entering text
-(parameter `inputMode`). You can also choose to get the response in text or in audio (parameter `outputMode`).
+(parameter `inputMode`). You can also choose if you want to play the response in audio with the `outputAudio` parameter.
 
 ## Usage
 

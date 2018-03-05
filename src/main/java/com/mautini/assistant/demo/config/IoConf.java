@@ -8,7 +8,7 @@ public class IoConf {
 
     private String inputMode;
 
-    private String outputMode;
+    private Boolean outputAudio;
 
     public IoConf() {
     }
@@ -21,11 +21,11 @@ public class IoConf {
         this.inputMode = inputMode;
     }
 
-    public String getOutputMode() {
-        return outputMode;
+    public Boolean getOutputAudio() {
+        return outputAudio;
     }
 
-    public void setOutputMode(String outputMode) {
-        this.outputMode = outputMode;
+    public void setOutputAudio(Boolean outputAudio) {
+        this.outputAudio = outputAudio;
     }
 }

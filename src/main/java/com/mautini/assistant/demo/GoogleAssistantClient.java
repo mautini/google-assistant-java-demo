@@ -81,8 +81,16 @@ public class GoogleAssistantClient {
 
             // requesting assistant with text query
             assistantClient.requestAssistant(request);
+            LOGGER.info(assistantClient.getTextResponse());
 
-            output(ioConf, audioPlayer, assistantClient);
+            if (Boolean.TRUE.equals(ioConf.getOutputAudio())) {
+                byte[] audioResponse = assistantClient.getAudioResponse();
+                if (audioResponse.length > 0) {
+                    audioPlayer.play(audioResponse);
+                } else {
+                    LOGGER.info("No response from the API");
+                }
+            }
         }
     }
 
@@ -100,31 +108,6 @@ public class GoogleAssistantClient {
             default:
                 LOGGER.error("Unknown input mode {}", ioConf.getInputMode());
                 return new byte[]{};
-        }
-    }
-
-    private static void output(IoConf ioConf, AudioPlayer audioPlayer, AssistantClient assistantClient)
-            throws AudioException {
-
-        switch (ioConf.getOutputMode()) {
-            case IoConf.TEXT:
-                String textResponse = assistantClient.getTextResponse();
-                if (textResponse.isEmpty()) {
-                    LOGGER.info("No response from the API");
-                } else {
-                    LOGGER.info(assistantClient.getTextResponse());
-                }
-                break;
-            case IoConf.AUDIO:
-                byte[] audioResponse = assistantClient.getAudioResponse();
-                if (audioResponse.length > 0) {
-                    audioPlayer.play(audioResponse);
-                } else {
-                    LOGGER.info("No response from the API");
-                }
-                break;
-            default:
-                LOGGER.error("Unknown output mode {}", ioConf.getInputMode());
         }
     }
 }
