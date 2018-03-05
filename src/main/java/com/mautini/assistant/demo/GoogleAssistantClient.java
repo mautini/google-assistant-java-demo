@@ -8,6 +8,7 @@ import com.mautini.assistant.demo.config.AssistantConf;
 import com.mautini.assistant.demo.config.AudioConf;
 import com.mautini.assistant.demo.config.AuthenticationConf;
 import com.mautini.assistant.demo.config.DeviceRegisterConf;
+import com.mautini.assistant.demo.config.IoConf;
 import com.mautini.assistant.demo.device.DeviceRegister;
 import com.mautini.assistant.demo.exception.AudioException;
 import com.mautini.assistant.demo.exception.AuthenticationException;
@@ -32,6 +33,7 @@ public class GoogleAssistantClient {
         DeviceRegisterConf deviceRegisterConf = ConfigBeanFactory.create(root.getConfig("deviceRegister"), DeviceRegisterConf.class);
         AssistantConf assistantConf = ConfigBeanFactory.create(root.getConfig("assistant"), AssistantConf.class);
         AudioConf audioConf = ConfigBeanFactory.create(root.getConfig("audio"), AudioConf.class);
+        IoConf ioConf = ConfigBeanFactory.create(root.getConfig("io"), IoConf.class);
 
         // Authentication
         AuthenticationHelper authenticationHelper = new AuthenticationHelper(authenticationConf);
@@ -52,7 +54,7 @@ public class GoogleAssistantClient {
 
         // Build the client (stub)
         AssistantClient assistantClient = new AssistantClient(authenticationHelper.getOAuthCredentials(), assistantConf,
-                deviceRegister.getDeviceModel(), deviceRegister.getDevice());
+                deviceRegister.getDeviceModel(), deviceRegister.getDevice(), ioConf);
 
         // Build the objects to record and play the conversation
         AudioRecorder audioRecorder = new AudioRecorder(audioConf);
@@ -60,8 +62,6 @@ public class GoogleAssistantClient {
 
         // Initiating Scanner to take user input
         Scanner scanner = new Scanner(System.in);
-
-
 
         // Main loop
         while (true) {
@@ -76,35 +76,55 @@ public class GoogleAssistantClient {
             }
 
 
-            // Text Input
-            // Taking user input in
-            String query = scanner.next();
-            // Converting user into byte array to keep consistency of requestAssistant params
-            byte[] queryByte = query.getBytes();
+            // Get input (text or voice)
+            byte[] request = getInput(ioConf, scanner, audioRecorder);
 
             // requesting assistant with text query
-            byte[] response = assistantClient.requestAssistant(queryByte, "text");
+            assistantClient.requestAssistant(request);
 
-            if (response.length > 0) {
-                LOGGER.info(assistantClient.getStringResponse());
-            } else {
-                LOGGER.info("No response from the API");
-            }
+            output(ioConf, audioPlayer, assistantClient);
+        }
+    }
 
+    private static byte[] getInput(IoConf ioConf, Scanner scanner, AudioRecorder audioRecorder) throws AudioException {
+        switch (ioConf.getInputMode()) {
+            case IoConf.TEXT:
+                LOGGER.info("Tap your request and press enter...");
+                // Taking user input in
+                String query = scanner.next();
+                // Converting user into byte array to keep consistency of requestAssistant params
+                return query.getBytes();
+            case IoConf.AUDIO:
+                // Record
+                return audioRecorder.getRecord();
+            default:
+                LOGGER.error("Unknown input mode {}", ioConf.getInputMode());
+                return new byte[]{};
+        }
+    }
 
-            // Audio Input: uncomment to run
-            // Record
-//            byte[] request = audioRecorder.getRecord();
-//
-//            // Request the api
-//            byte[] response = assistantClient.requestAssistant(request, "audio");
-//
-//            // Play result if any
-//            if (response.length > 0) {
-//                audioPlayer.play(response);
-//            } else {
-//                LOGGER.info("No response from the API");
-//            }
+    private static void output(IoConf ioConf, AudioPlayer audioPlayer, AssistantClient assistantClient)
+            throws AudioException {
+
+        switch (ioConf.getOutputMode()) {
+            case IoConf.TEXT:
+                String textResponse = assistantClient.getTextResponse();
+                if (textResponse.isEmpty()) {
+                    LOGGER.info("No response from the API");
+                } else {
+                    LOGGER.info(assistantClient.getTextResponse());
+                }
+                break;
+            case IoConf.AUDIO:
+                byte[] audioResponse = assistantClient.getAudioResponse();
+                if (audioResponse.length > 0) {
+                    audioPlayer.play(audioResponse);
+                } else {
+                    LOGGER.info("No response from the API");
+                }
+                break;
+            default:
+                LOGGER.error("Unknown output mode {}", ioConf.getInputMode());
         }
     }
 }

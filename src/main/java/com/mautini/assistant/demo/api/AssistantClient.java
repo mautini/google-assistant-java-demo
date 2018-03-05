@@ -14,6 +14,7 @@ import com.google.auth.oauth2.OAuth2Credentials;
 import com.google.protobuf.ByteString;
 import com.mautini.assistant.demo.authentication.OAuthCredentials;
 import com.mautini.assistant.demo.config.AssistantConf;
+import com.mautini.assistant.demo.config.IoConf;
 import com.mautini.assistant.demo.device.Device;
 import com.mautini.assistant.demo.device.DeviceModel;
 import com.mautini.assistant.demo.exception.ConverseException;
@@ -36,9 +37,6 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AssistantClient.class);
 
-    private static final String MOD_AUDIO = "audio";
-    private static final String MOD_TEXT = "text";
-
     private CountDownLatch finishLatch = new CountDownLatch(1);
 
     private EmbeddedAssistantGrpc.EmbeddedAssistantStub embeddedAssistantStub;
@@ -48,14 +46,14 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
     // See reference.conf
     private AssistantConf assistantConf;
 
-    // audio or text
-    private String inputType;
-
     // if text inputType, text query is set
     private String textQuery;
 
-    // Text Query response is captured in string format
-    private String textQueryResponse;
+    private byte[] audioResponse;
+
+    private String textResponse;
+
+    private IoConf ioConf;
 
     /**
      * Conversation state to continue a conversation if needed
@@ -69,12 +67,13 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
     private Device device;
 
     public AssistantClient(OAuthCredentials oAuthCredentials, AssistantConf assistantConf, DeviceModel deviceModel,
-                           Device device) {
+                           Device device, IoConf ioConf) {
 
         this.assistantConf = assistantConf;
         this.deviceModel = deviceModel;
         this.device = device;
         this.currentConversationState = ByteString.EMPTY;
+        this.ioConf = ioConf;
 
         // Create a channel to the test service.
         ManagedChannel channel = ManagedChannelBuilder.forAddress(assistantConf.getAssistantApiEndpoint(), 443)
@@ -116,21 +115,19 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     /**
      * Calling text query or audio assistant based on params
-     * @param request
-     * @param type
-     * @return byte[]
+     * @param request the request for the assistant (text or voice)
      * @throws ConverseException
      */
-    public byte[]
-    requestAssistant(byte[] request, String type) throws ConverseException {
-        inputType = type;
-        switch (inputType) {
-            case MOD_AUDIO:
-                return audioRequestAssistant(request);
-            case MOD_TEXT:
-                return textRequestAssistant(request);
+    public void requestAssistant(byte[] request) throws ConverseException {
+        switch (ioConf.getInputMode()) {
+            case IoConf.AUDIO:
+                audioResponse = audioRequestAssistant(request);
+                break;
+            case IoConf.TEXT:
+                audioResponse = textRequestAssistant(request);
+                break;
             default:
-                return textRequestAssistant(request);
+                LOGGER.error("Unknown input mode {}", ioConf.getInputMode());
         }
     }
 
@@ -140,10 +137,8 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
      * @return byte[]
      * @throws ConverseException
      */
-    private byte[]
-    textRequestAssistant(byte[] request) throws ConverseException {
+    private byte[] textRequestAssistant(byte[] request) throws ConverseException {
         this.textQuery = new String(request);
-        LOGGER.info(this.textQuery);
         try {
             // Send the config request
             StreamObserver<AssistRequest> requester = embeddedAssistantStub.assist(this);
@@ -163,12 +158,12 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
         }
     }
 
-    /**
-     * Helper to cature string response for onNext method
-     * @return String
-     */
-    public String getStringResponse() {
-        return this.textQueryResponse;
+    public byte[] getAudioResponse() {
+        return audioResponse;
+    }
+
+    public String getTextResponse() {
+        return textResponse;
     }
 
     /**
@@ -177,8 +172,7 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
      * @return byte[]
      * @throws ConverseException
      */
-    private byte[]
-    audioRequestAssistant(byte[] request) throws ConverseException {
+    private byte[] audioRequestAssistant(byte[] request) throws ConverseException {
         try {
             // Reset the byte array
             currentResponse = new ByteArrayOutputStream();
@@ -249,8 +243,7 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
                     && !value.getDialogStateOut().getSupplementalDisplayText().isEmpty()) {
 
                 // Capturing string response for text query output
-                this.textQueryResponse = value.getDialogStateOut().getSupplementalDisplayText();
-                LOGGER.info("Response Text : {}", value.getDialogStateOut().getSupplementalDisplayText());
+                this.textResponse = value.getDialogStateOut().getSupplementalDisplayText();
             }
 
         } catch (Exception e) {
@@ -331,13 +324,14 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
             AudioInConfig audioConfig,
             String text_query
     ) {
-        switch (inputType) {
-            case MOD_AUDIO:
+        switch (ioConf.getInputMode()) {
+            case IoConf.AUDIO:
                 return assistConfigBuilder.setAudioInConfig(audioConfig);
-            case MOD_TEXT:
+            case IoConf.TEXT:
                 return assistConfigBuilder.setTextQuery(text_query);
             default:
-                return assistConfigBuilder.setTextQuery(text_query);
+                LOGGER.error("Unknown input mode {}", ioConf.getInputMode());
+                return assistConfigBuilder;
         }
 
     }
