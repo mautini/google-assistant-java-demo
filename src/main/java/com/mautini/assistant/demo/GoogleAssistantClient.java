@@ -86,7 +86,7 @@ public class GoogleAssistantClient {
             byte[] response = assistantClient.requestAssistant(queryByte, "text");
 
             if (response.length > 0) {
-                System.out.println(assistantClient.getStringResponse());
+                LOGGER.info(assistantClient.getStringResponse());
             } else {
                 LOGGER.info("No response from the API");
             }
