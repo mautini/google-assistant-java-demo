@@ -99,7 +99,7 @@ public class GoogleAssistantClient {
             case IoConf.TEXT:
                 LOGGER.info("Tap your request and press enter...");
                 // Taking user input in
-                String query = scanner.next();
+                String query = scanner.nextLine();
                 // Converting user into byte array to keep consistency of requestAssistant params
                 return query.getBytes();
             case IoConf.AUDIO:
