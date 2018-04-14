@@ -140,6 +140,8 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
     private byte[] textRequestAssistant(byte[] request) throws ConverseException {
         this.textQuery = new String(request);
         try {
+            currentResponse = new ByteArrayOutputStream();
+            finishLatch = new CountDownLatch(1);
             // Send the config request
             StreamObserver<AssistRequest> requester = embeddedAssistantStub.assist(this);
             requester.onNext(getConfigRequest());
