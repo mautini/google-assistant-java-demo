@@ -29,13 +29,13 @@ public class AuthenticationHelper {
     private OAuthCredentials oAuthCredentials;
 
     // The client to perform HTTP request for oAuth2 authentication
-    private OAuthClient oAuthClient;
+    private final OAuthClient oAuthClient;
 
     // The Gson object to store the credentials in a file
-    private Gson gson;
+    private final Gson gson;
 
     // The configuration for the authentication module (see reference.conf in resources)
-    private AuthenticationConf authenticationConf;
+    private final AuthenticationConf authenticationConf;
 
     public AuthenticationHelper(AuthenticationConf authenticationConf) {
         this.authenticationConf = authenticationConf;
@@ -95,10 +95,10 @@ public class AuthenticationHelper {
         LOGGER.info("Refreshing access token");
         try {
             Response<OAuthCredentials> response = oAuthClient.refreshAccessToken(
-                    oAuthCredentials.getRefreshToken(),
-                    authenticationConf.getClientId(),
-                    authenticationConf.getClientSecret(),
-                    "refresh_token")
+                            oAuthCredentials.getRefreshToken(),
+                            authenticationConf.getClientId(),
+                            authenticationConf.getClientSecret(),
+                            "refresh_token")
                     .execute();
 
             if (response.isSuccessful()) {
@@ -138,15 +138,14 @@ public class AuthenticationHelper {
         String code = br.readLine();
 
         Response<OAuthCredentials> response = oAuthClient.getAccessToken(
-                code,
-                authenticationConf.getClientId(),
-                authenticationConf.getClientSecret(),
-                authenticationConf.getCodeRedirectUri(),
-                "authorization_code")
+                        code,
+                        authenticationConf.getClientId(),
+                        authenticationConf.getClientSecret(),
+                        authenticationConf.getCodeRedirectUri(),
+                        "authorization_code")
                 .execute();
 
-        if (response.isSuccessful()) {
-            oAuthCredentials = response.body();
+        if (response.isSuccessful() && (oAuthCredentials = response.body()) != null) {
             return Optional.of(oAuthCredentials);
         } else {
             return Optional.empty();
@@ -161,7 +160,7 @@ public class AuthenticationHelper {
     private void saveCredentials() throws IOException {
         try (FileWriter writer = new FileWriter(authenticationConf.getCredentialsFilePath())) {
             // Set the expiration Date
-            oAuthCredentials.setExpirationTime(System.currentTimeMillis() + oAuthCredentials.getExpiresIn() * 1000);
+            oAuthCredentials.setExpirationTime(System.currentTimeMillis() + oAuthCredentials.getExpiresIn() * 1000L);
             gson.toJson(oAuthCredentials, writer);
         }
     }

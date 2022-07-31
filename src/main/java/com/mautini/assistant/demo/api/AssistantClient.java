@@ -44,7 +44,7 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
     private ByteArrayOutputStream currentResponse = new ByteArrayOutputStream();
 
     // See reference.conf
-    private AssistantConf assistantConf;
+    private final AssistantConf assistantConf;
 
     // if text inputType, text query is set
     private String textQuery;
@@ -53,7 +53,7 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     private String textResponse;
 
-    private IoConf ioConf;
+    private final IoConf ioConf;
 
     /**
      * Conversation state to continue a conversation if needed
@@ -62,9 +62,9 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
      */
     private ByteString currentConversationState;
 
-    private DeviceModel deviceModel;
+    private final DeviceModel deviceModel;
 
-    private Device device;
+    private final Device device;
 
     public AssistantClient(OAuthCredentials oAuthCredentials, AssistantConf assistantConf, DeviceModel deviceModel,
                            Device device, IoConf ioConf) {
@@ -98,7 +98,9 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
                 new Date(oAuthCredentials.getExpirationTime())
         );
 
-        OAuth2Credentials oAuth2Credentials = new OAuth2Credentials(accessToken);
+        OAuth2Credentials oAuth2Credentials = OAuth2Credentials.newBuilder()
+                .setAccessToken(accessToken)
+                .build();
 
         // Create an instance of {@link io.grpc.CallCredentials}
         return MoreCallCredentials.from(oAuth2Credentials);
@@ -115,8 +117,8 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     /**
      * Calling text query or audio assistant based on params
+     *
      * @param request the request for the assistant (text or voice)
-     * @throws ConverseException
      */
     public void requestAssistant(byte[] request) throws ConverseException {
         switch (ioConf.getInputMode()) {
@@ -133,9 +135,9 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     /**
      * Handle text query
+     *
      * @param request byte[]
      * @return byte[]
-     * @throws ConverseException
      */
     private byte[] textRequestAssistant(byte[] request) throws ConverseException {
         this.textQuery = new String(request);
@@ -152,7 +154,10 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
             requester.onCompleted();
 
             // Receiving happens asynchronously
-            finishLatch.await(1, TimeUnit.MINUTES);
+            boolean expired = finishLatch.await(1, TimeUnit.MINUTES);
+            if (expired) {
+                LOGGER.warn("Waited too much time for the response, It could return bad result");
+            }
 
             return currentResponse.toByteArray();
         } catch (Exception e) {
@@ -170,9 +175,9 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     /**
      * Handle audio request
+     *
      * @param request byte[]
      * @return byte[]
-     * @throws ConverseException
      */
     private byte[] audioRequestAssistant(byte[] request) throws ConverseException {
         try {
@@ -205,7 +210,10 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
             requester.onCompleted();
 
             // Receiving happens asynchronously
-            finishLatch.await(1, TimeUnit.MINUTES);
+            boolean expired = finishLatch.await(1, TimeUnit.MINUTES);
+            if (expired) {
+                LOGGER.warn("Waited too much time for the response, It could return bad result");
+            }
 
             return currentResponse.toByteArray();
         } catch (Exception e) {
@@ -216,33 +224,24 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
     @Override
     public void onNext(AssistResponse value) {
         try {
-            if (value.getEventType() != null
-                    && value.getEventType() != AssistResponse.EventType.EVENT_TYPE_UNSPECIFIED) {
+            if (value.getEventType() != AssistResponse.EventType.EVENT_TYPE_UNSPECIFIED) {
 
                 LOGGER.info("Event type : {}", value.getEventType().name());
             }
 
-            if (value.getAudioOut() != null) {
-                currentResponse.write(value.getAudioOut().getAudioData().toByteArray());
+            currentResponse.write(value.getAudioOut().getAudioData().toByteArray());
+            currentConversationState = value.getDialogStateOut().getConversationState();
+
+            String userRequest = value.getSpeechResultsList().stream()
+                    .map(SpeechRecognitionResult::getTranscript)
+                    .collect(Collectors.joining(" "));
+
+            if (!userRequest.isEmpty()) {
+                LOGGER.info("Request Text : {}", userRequest);
             }
 
-            if (value.getDialogStateOut() != null) {
-                currentConversationState = value.getDialogStateOut().getConversationState();
-
-                if (value.getSpeechResultsList() != null) {
-                    String userRequest = value.getSpeechResultsList().stream()
-                            .map(SpeechRecognitionResult::getTranscript)
-                            .collect(Collectors.joining(" "));
-
-                    if (!userRequest.isEmpty()) {
-                        LOGGER.info("Request Text : {}", userRequest);
-                    }
-                }
-            }
-
-            if (value.getDialogStateOut() != null
-                    && value.getDialogStateOut().getSupplementalDisplayText() != null
-                    && !value.getDialogStateOut().getSupplementalDisplayText().isEmpty()) {
+            value.getDialogStateOut().getSupplementalDisplayText();
+            if (!value.getDialogStateOut().getSupplementalDisplayText().isEmpty()) {
 
                 // Capturing string response for text query output
                 this.textResponse = value.getDialogStateOut().getSupplementalDisplayText();
@@ -316,9 +315,10 @@ public class AssistantClient implements StreamObserver<AssistResponse> {
 
     /**
      * Prepares AssistConfig based on input type
+     *
      * @param assistConfigBuilder AssistConfig.Builder
-     * @param audioConfig AudioInConfig
-     * @param text_query String
+     * @param audioConfig         AudioInConfig
+     * @param text_query          String
      * @return AssistConfig.Builder
      */
     private AssistConfig.Builder getAssistConfigBuilder(

@@ -84,7 +84,7 @@ public class DeviceRegister {
         }
 
         // If we can't get the device model from a file, continue with the webservice
-        String modelId = projectId + UUID.randomUUID();
+        String modelId = projectId + "-" + UUID.randomUUID();
 
         DeviceModel.Manifest manifest = new DeviceModel.Manifest();
         manifest.setManufacturer("mautini");
@@ -94,7 +94,6 @@ public class DeviceRegister {
         DeviceModel deviceModel = new DeviceModel();
         deviceModel.setDeviceModelId(modelId);
         deviceModel.setProjectId(projectId);
-        deviceModel.setName(String.format("projects/%s/deviceModels/%s", projectId, modelId));
         // https://developers.google.com/assistant/sdk/reference/device-registration/model-and-instance-schemas#device_model_json
         // Light does not fit this project but there is nothing better in the API
         deviceModel.setDeviceType("action.devices.types.LIGHT");
