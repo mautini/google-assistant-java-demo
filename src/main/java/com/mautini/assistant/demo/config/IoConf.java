@@ -17,6 +17,7 @@ public class IoConf {
         return inputMode;
     }
 
+    @SuppressWarnings("unused")
     public void setInputMode(String inputMode) {
         this.inputMode = inputMode;
     }
@@ -25,6 +26,7 @@ public class IoConf {
         return outputAudio;
     }
 
+    @SuppressWarnings("unused")
     public void setOutputAudio(Boolean outputAudio) {
         this.outputAudio = outputAudio;
     }

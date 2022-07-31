@@ -101,11 +101,12 @@ public class AuthenticationHelper {
                             "refresh_token")
                     .execute();
 
-            if (response.isSuccessful()) {
-                LOGGER.info("New Access Token: " + response.body().getAccessToken());
-                oAuthCredentials.setAccessToken(response.body().getAccessToken());
-                oAuthCredentials.setExpiresIn(response.body().getExpiresIn());
-                oAuthCredentials.setTokenType(response.body().getTokenType());
+            OAuthCredentials body;
+            if (response.isSuccessful() && (body = response.body()) != null) {
+                LOGGER.info("New Access Token: " + body.getAccessToken());
+                oAuthCredentials.setAccessToken(body.getAccessToken());
+                oAuthCredentials.setExpiresIn(body.getExpiresIn());
+                oAuthCredentials.setTokenType(body.getTokenType());
                 saveCredentials();
                 return Optional.of(oAuthCredentials);
             } else {

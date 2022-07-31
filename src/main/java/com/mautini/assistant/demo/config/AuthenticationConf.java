@@ -25,6 +25,7 @@ public class AuthenticationConf {
         return clientId;
     }
 
+    @SuppressWarnings("unused")
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
@@ -33,6 +34,7 @@ public class AuthenticationConf {
         return clientSecret;
     }
 
+    @SuppressWarnings("unused")
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
     }
@@ -41,6 +43,7 @@ public class AuthenticationConf {
         return scope;
     }
 
+    @SuppressWarnings("unused")
     public void setScope(String scope) {
         this.scope = scope;
     }
@@ -49,6 +52,7 @@ public class AuthenticationConf {
         return codeRedirectUri;
     }
 
+    @SuppressWarnings("unused")
     public void setCodeRedirectUri(String codeRedirectUri) {
         this.codeRedirectUri = codeRedirectUri;
     }
@@ -57,14 +61,17 @@ public class AuthenticationConf {
         return googleOAuthEndpoint;
     }
 
+    @SuppressWarnings("unused")
     public void setGoogleOAuthEndpoint(String googleOAuthEndpoint) {
         this.googleOAuthEndpoint = googleOAuthEndpoint;
     }
 
+    @SuppressWarnings("unused")
     public String getUrlGoogleAccount() {
         return urlGoogleAccount;
     }
 
+    @SuppressWarnings("unused")
     public void setUrlGoogleAccount(String urlGoogleAccount) {
         this.urlGoogleAccount = urlGoogleAccount;
     }
@@ -73,6 +80,7 @@ public class AuthenticationConf {
         return credentialsFilePath;
     }
 
+    @SuppressWarnings("unused")
     public void setCredentialsFilePath(String credentialsFilePath) {
         this.credentialsFilePath = credentialsFilePath;
     }
@@ -81,6 +89,7 @@ public class AuthenticationConf {
         return maxDelayBeforeRefresh;
     }
 
+    @SuppressWarnings("unused")
     public void setMaxDelayBeforeRefresh(Long maxDelayBeforeRefresh) {
         this.maxDelayBeforeRefresh = maxDelayBeforeRefresh;
     }

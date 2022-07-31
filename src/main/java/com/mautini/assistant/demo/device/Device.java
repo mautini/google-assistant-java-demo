@@ -19,6 +19,7 @@ public class Device {
         this.id = id;
     }
 
+    @SuppressWarnings("unused")
     public String getModelId() {
         return modelId;
     }
@@ -27,6 +28,7 @@ public class Device {
         this.modelId = modelId;
     }
 
+    @SuppressWarnings("unused")
     public String getClientType() {
         return clientType;
     }

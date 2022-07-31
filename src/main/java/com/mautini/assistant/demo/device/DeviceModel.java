@@ -23,6 +23,7 @@ public class DeviceModel {
         this.deviceModelId = deviceModelId;
     }
 
+    @SuppressWarnings("unused")
     public String getProjectId() {
         return projectId;
     }
@@ -31,6 +32,7 @@ public class DeviceModel {
         this.projectId = projectId;
     }
 
+    @SuppressWarnings("unused")
     public Manifest getManifest() {
         return manifest;
     }
@@ -39,14 +41,17 @@ public class DeviceModel {
         this.manifest = manifest;
     }
 
+    @SuppressWarnings("unused")
     public String getName() {
         return name;
     }
 
+    @SuppressWarnings("unused")
     public void setName(String name) {
         this.name = name;
     }
 
+    @SuppressWarnings("unused")
     public String getDeviceType() {
         return deviceType;
     }
@@ -66,6 +71,7 @@ public class DeviceModel {
         public Manifest() {
         }
 
+        @SuppressWarnings("unused")
         public String getManufacturer() {
             return manufacturer;
         }
@@ -74,6 +80,7 @@ public class DeviceModel {
             this.manufacturer = manufacturer;
         }
 
+        @SuppressWarnings("unused")
         public String getProductName() {
             return productName;
         }
@@ -82,6 +89,7 @@ public class DeviceModel {
             this.productName = productName;
         }
 
+        @SuppressWarnings("unused")
         public String getDeviceDescription() {
             return deviceDescription;
         }

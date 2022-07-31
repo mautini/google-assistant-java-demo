@@ -10,7 +10,7 @@ import javax.sound.sampled.SourceDataLine;
 
 public class AudioPlayer {
 
-    private AudioConf audioConf;
+    private final AudioConf audioConf;
 
     public AudioPlayer(AudioConf audioConf) {
         this.audioConf = audioConf;

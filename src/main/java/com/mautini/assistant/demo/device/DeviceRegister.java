@@ -24,17 +24,17 @@ public class DeviceRegister {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceRegister.class);
 
     // Configuration from typesafe
-    private DeviceRegisterConf deviceRegisterConf;
+    private final DeviceRegisterConf deviceRegisterConf;
 
     private DeviceModel deviceModel;
 
     private Device device;
 
     // The API interface (used by retrofit)
-    private DeviceInterface deviceInterface;
+    private final DeviceInterface deviceInterface;
 
     // The Gson object to read/write the device model and instance in a file
-    private Gson gson;
+    private final Gson gson;
 
     public DeviceRegister(DeviceRegisterConf deviceRegisterConf, String accessToken) {
         this.deviceRegisterConf = deviceRegisterConf;
