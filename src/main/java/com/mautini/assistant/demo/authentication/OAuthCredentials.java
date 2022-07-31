@@ -53,22 +53,27 @@ public class OAuthCredentials {
         return refreshToken;
     }
 
+    @SuppressWarnings("unused")
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
 
+    @SuppressWarnings("unused")
     public String getIdToken() {
         return idToken;
     }
 
+    @SuppressWarnings("unused")
     public void setIdToken(String idToken) {
         this.idToken = idToken;
     }
 
+    @SuppressWarnings("unused")
     public Long getExpirationTime() {
         return expirationTime;
     }
 
+    @SuppressWarnings("unused")
     public void setExpirationTime(Long expirationTime) {
         this.expirationTime = expirationTime;
     }

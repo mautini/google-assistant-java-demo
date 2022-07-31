@@ -23,7 +23,7 @@ public class AudioRecorder {
 
     private boolean stopped = false;
 
-    private AudioConf audioConf;
+    private final AudioConf audioConf;
 
     public AudioRecorder(AudioConf audioConf) {
         this.audioConf = audioConf;

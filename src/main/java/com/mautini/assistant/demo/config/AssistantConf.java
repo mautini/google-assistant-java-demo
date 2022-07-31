@@ -17,6 +17,7 @@ public class AssistantConf {
         return assistantApiEndpoint;
     }
 
+    @SuppressWarnings("unused")
     public void setAssistantApiEndpoint(String assistantApiEndpoint) {
         this.assistantApiEndpoint = assistantApiEndpoint;
     }
@@ -25,6 +26,7 @@ public class AssistantConf {
         return audioSampleRate;
     }
 
+    @SuppressWarnings("unused")
     public void setAudioSampleRate(Integer audioSampleRate) {
         this.audioSampleRate = audioSampleRate;
     }
@@ -33,6 +35,7 @@ public class AssistantConf {
         return chunkSize;
     }
 
+    @SuppressWarnings("unused")
     public void setChunkSize(Integer chunkSize) {
         this.chunkSize = chunkSize;
     }
@@ -41,6 +44,7 @@ public class AssistantConf {
         return volumePercent;
     }
 
+    @SuppressWarnings("unused")
     public void setVolumePercent(Integer volumePercent) {
         this.volumePercent = volumePercent;
     }

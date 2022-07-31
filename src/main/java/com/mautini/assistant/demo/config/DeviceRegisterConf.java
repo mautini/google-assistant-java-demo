@@ -17,6 +17,7 @@ public class DeviceRegisterConf {
         return apiEndpoint;
     }
 
+    @SuppressWarnings("unused")
     public void setApiEndpoint(String apiEndpoint) {
         this.apiEndpoint = apiEndpoint;
     }
@@ -25,6 +26,7 @@ public class DeviceRegisterConf {
         return projectId;
     }
 
+    @SuppressWarnings("unused")
     public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
@@ -33,6 +35,7 @@ public class DeviceRegisterConf {
         return deviceModelFilePath;
     }
 
+    @SuppressWarnings("unused")
     public void setDeviceModelFilePath(String deviceModelFilePath) {
         this.deviceModelFilePath = deviceModelFilePath;
     }
@@ -41,6 +44,7 @@ public class DeviceRegisterConf {
         return deviceInstanceFilePath;
     }
 
+    @SuppressWarnings("unused")
     public void setDeviceInstanceFilePath(String deviceInstanceFilePath) {
         this.deviceInstanceFilePath = deviceInstanceFilePath;
     }

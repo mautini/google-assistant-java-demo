@@ -19,6 +19,7 @@ public class AudioConf {
         return sampleRate;
     }
 
+    @SuppressWarnings("unused")
     public void setSampleRate(Integer sampleRate) {
         this.sampleRate = sampleRate;
     }
@@ -27,6 +28,7 @@ public class AudioConf {
         return sampleSizeInBits;
     }
 
+    @SuppressWarnings("unused")
     public void setSampleSizeInBits(Integer sampleSizeInBits) {
         this.sampleSizeInBits = sampleSizeInBits;
     }
@@ -35,6 +37,7 @@ public class AudioConf {
         return channels;
     }
 
+    @SuppressWarnings("unused")
     public void setChannels(Integer channels) {
         this.channels = channels;
     }
@@ -43,6 +46,7 @@ public class AudioConf {
         return signed;
     }
 
+    @SuppressWarnings("unused")
     public void setSigned(Boolean signed) {
         this.signed = signed;
     }
@@ -51,6 +55,7 @@ public class AudioConf {
         return bigEndian;
     }
 
+    @SuppressWarnings("unused")
     public void setBigEndian(Boolean bigEndian) {
         this.bigEndian = bigEndian;
     }
